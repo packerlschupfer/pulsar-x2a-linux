@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.deb
+pulsar-x2a-linux_*_*/

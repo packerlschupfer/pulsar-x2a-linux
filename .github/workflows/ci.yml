@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  lint-and-import:
+    name: Lint & import check
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            python3-usb \
+            python3-gi \
+            gir1.2-gtk-4.0 \
+            gir1.2-adw-1 \
+            gir1.2-dbusmenu-glib-0.4
+
+      - name: Syntax check
+        run: |
+          python3 -m py_compile pulsar_x2a.py
+          python3 -m py_compile pulsar_x2a_gui.py
+          echo "Syntax OK"
+
+      - name: Import check (backend)
+        run: python3 -c "import pulsar_x2a; print('backend imports OK')"
+
+      - name: Import check (GUI — no display needed)
+        run: |
+          python3 -c "
+          import gi
+          gi.require_version('Gtk', '4.0')
+          gi.require_version('Adw', '1')
+          gi.require_version('Dbusmenu', '0.4')
+          from gi.repository import Gtk, Adw, GLib, Gio, Dbusmenu
+          print('GUI imports OK')
+          "
