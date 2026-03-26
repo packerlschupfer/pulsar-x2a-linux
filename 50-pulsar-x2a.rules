@@ -1,9 +1,0 @@
-# udev rules for Pulsar X2A Medium Wired mouse
-# Allows members of the 'plugdev' group to access the HID device without sudo.
-#
-# Install:
-#   sudo cp 50-pulsar-x2a.rules /etc/udev/rules.d/
-#   sudo udevadm control --reload-rules && sudo udevadm trigger
-
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3710", ATTRS{idProduct}=="1404", MODE="0660", GROUP="plugdev"
-KERNEL=="hidraw*", ATTRS{idVendor}=="3710", ATTRS{idProduct}=="1404", MODE="0660", GROUP="plugdev"

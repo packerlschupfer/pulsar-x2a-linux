@@ -25,12 +25,31 @@ jobs:
 
       - name: Syntax check
         run: |
-          python3 -m py_compile pulsar_x2a.py
-          python3 -m py_compile pulsar_x2a_gui.py
+          python3 -m py_compile src/pulsar_mouse/__init__.py
+          python3 -m py_compile src/pulsar_mouse/base.py
+          python3 -m py_compile src/pulsar_mouse/hid.py
+          python3 -m py_compile src/pulsar_mouse/cli.py
+          python3 -m py_compile src/pulsar_mouse/gui.py
+          python3 -m py_compile src/pulsar_mouse/drivers/__init__.py
+          python3 -m py_compile src/pulsar_mouse/drivers/x2a.py
+          python3 -m py_compile src/pulsar_mouse/drivers/x2h.py
+          python3 -m py_compile src/pulsar_mouse/drivers/xlite_v4.py
           echo "Syntax OK"
 
       - name: Import check (backend)
-        run: python3 -c "import pulsar_x2a; print('backend imports OK')"
+        env:
+          PYTHONPATH: src
+        run: |
+          python3 -c "
+          from pulsar_mouse import scan_devices, find_device, __version__
+          from pulsar_mouse.base import PulsarDevice, DeviceCapabilities
+          from pulsar_mouse.hid import describe_button, parse_button_function
+          from pulsar_mouse.drivers import discover_all
+          from pulsar_mouse.drivers.x2a import PulsarX2A
+          print(f'Backend imports OK — v{__version__}')
+          print(f'Drivers: {list(discover_all())}')
+          print(f'X2A caps: {PulsarX2A.capabilities.name}')
+          "
 
       - name: Import check (GUI — no display needed)
         run: |

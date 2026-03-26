@@ -28,7 +28,7 @@ jobs:
 
       - name: Build .deb
         run: |
-          PKG=pulsar-x2a-linux
+          PKG=pulsar-mouse-linux
           VER=$VERSION
           ARCH=all
           DIR="${PKG}_${VER}_${ARCH}"
@@ -39,37 +39,58 @@ jobs:
           mkdir -p "${DIR}/usr/share/applications"
           mkdir -p "${DIR}/etc/udev/rules.d"
 
-          # Files
-          mkdir -p "${DIR}/usr/lib/python3/dist-packages"
-          install -m 755 pulsar_x2a.py     "${DIR}/usr/local/bin/pulsar-x2a"
-          install -m 644 pulsar_x2a.py     "${DIR}/usr/lib/python3/dist-packages/pulsar_x2a.py"
-          install -m 755 pulsar_x2a_gui.py "${DIR}/usr/local/bin/pulsar-x2a-gui"
-          install -m 644 50-pulsar-x2a.rules \
-            "${DIR}/etc/udev/rules.d/50-pulsar-x2a.rules"
+          # Python package
+          PKG_DIR="${DIR}/usr/lib/python3/dist-packages/pulsar_mouse"
+          DRIVERS_DIR="${PKG_DIR}/drivers"
+          mkdir -p "${DRIVERS_DIR}"
+
+          install -m 644 src/pulsar_mouse/__init__.py  "${PKG_DIR}/"
+          install -m 644 src/pulsar_mouse/base.py      "${PKG_DIR}/"
+          install -m 644 src/pulsar_mouse/hid.py       "${PKG_DIR}/"
+          install -m 644 src/pulsar_mouse/cli.py       "${PKG_DIR}/"
+          install -m 644 src/pulsar_mouse/gui.py       "${PKG_DIR}/"
+          install -m 644 src/pulsar_mouse/drivers/__init__.py "${DRIVERS_DIR}/"
+          install -m 644 src/pulsar_mouse/drivers/x2a.py     "${DRIVERS_DIR}/"
+          install -m 644 src/pulsar_mouse/drivers/x2h.py     "${DRIVERS_DIR}/"
+          install -m 644 src/pulsar_mouse/drivers/xlite_v4.py "${DRIVERS_DIR}/"
+
+          # CLI entry point
+          cat > "${DIR}/usr/local/bin/pulsar-mouse" << 'SCRIPT'
+          #!/usr/bin/env python3
+          from pulsar_mouse.cli import main
+          main()
+          SCRIPT
+          chmod 755 "${DIR}/usr/local/bin/pulsar-mouse"
+
+          # GUI entry point
+          cat > "${DIR}/usr/local/bin/pulsar-mouse-gui" << 'SCRIPT'
+          #!/usr/bin/env python3
+          from pulsar_mouse.gui import main
+          main()
+          SCRIPT
+          chmod 755 "${DIR}/usr/local/bin/pulsar-mouse-gui"
+
+          # udev rules
+          install -m 644 udev/50-pulsar-mouse.rules \
+            "${DIR}/etc/udev/rules.d/50-pulsar-mouse.rules"
 
           # Desktop entry
-          cat > "${DIR}/usr/share/applications/pulsar-x2a.desktop" << EOF
-          [Desktop Entry]
-          Name=Pulsar X2A
-          Comment=Configure Pulsar X2A mouse settings
-          Exec=pulsar-x2a-gui
-          Icon=input-mouse
-          Type=Application
-          Categories=Settings;HardwareSettings;
-          Keywords=mouse;gaming;dpi;pulsar;
-          StartupNotify=true
-          EOF
+          install -m 644 data/pulsar-mouse.desktop \
+            "${DIR}/usr/share/applications/pulsar-mouse.desktop"
 
           # control file
           cat > "${DIR}/DEBIAN/control" << EOF
-          Package: pulsar-x2a-linux
+          Package: pulsar-mouse-linux
           Version: ${VER}
           Architecture: ${ARCH}
           Maintainer: packerlschupfer
           Depends: python3, python3-usb, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-dbusmenu-glib-0.4
-          Description: Linux configuration tool for the Pulsar X2A Medium Wired mouse
-           Reverse-engineered USB HID tool providing a CLI and GTK4/libadwaita
-           settings GUI with system-tray applet.
+          Replaces: pulsar-x2a-linux
+          Conflicts: pulsar-x2a-linux
+          Description: Linux configuration tool for Pulsar gaming mice
+           Plugin-based tool providing CLI and GTK4/libadwaita GUI for
+           configuring Pulsar gaming mice. Supports multiple mouse models
+           via device-specific protocol drivers.
           EOF
 
           # postinst: reload udev rules
